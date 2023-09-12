@@ -35,11 +35,11 @@ export class BooleanType extends BaseTypeObj{
 export class StringType extends BaseTypeObj{
     private mStringData:string|undefined; 
     public Virify():boolean{
-        if(typeof(this.mData) == "undefined" || typeof(this.mData) == "boolean"){
+        if( typeof(this.mData) == "boolean"){
             this.mVirifyResult = "校验失败，传入参数无法转换为字符串类型 类型";
             return false;
         }
-        this.mStringData = this.mData.toString();
+        this.mStringData = this.mData ?this.mData.toString():"";
         return true;
     }
     public GetResult():string{
