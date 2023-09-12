@@ -10,13 +10,12 @@ export class ParseFiled{
     private mOrignData:{name: string,data:any[][];}[] | undefined;//经过解析后的原始表数据
     
     private mIsSuccess:boolean = false;
-    private mErrArray:string = "";//无效原因 数组
+    private mErrStr:string = "";//无效原因 数组
 
     private mFiledName:Map<string,number>|undefined = new Map<string,number>();//字段名称 
     private mFiledNameIndex:Map<number,string> = new Map<number,string>();//字段名称 
     private mFiledDesc:Map<number,string>|undefined = new Map<number,string>();//字段描述
     private mFiledTypeMap:Map<number,BaseTypeObj>|undefined = new Map<number,BaseTypeObj>();//字段类型
-
     private mDataMap:Map<number,Map<number,ContainType | Array<ContainType> | Map<string,ContainType>  |undefined>> | undefined;//数据结构信息
     public constructor(path:string,name:string){
         this.mPath = path;
@@ -55,13 +54,13 @@ export class ParseFiled{
     public GetName():string{
         return  this.mName;
     }
-    public GetKeyType():string{
-        let keyIndex:number = this.mFiledName?.get("key")!;
+    public GetKeyType(key:string):string{
+        let keyIndex:number = this.mFiledName?.get(key)!;
         return this.mFiledTypeMap!.get(keyIndex)!.GetType();
     }
 
     public GetErrorResult():string{
-        return this.mErrArray;
+        return this.mErrStr;
     }
     public GetMemberAttr():Array<{filed:string,desc:string,type:string}>{
         let retArray:Array<{filed:string,desc:string,type:string}> = new Array<{filed:string,desc:string,type:string}>();
@@ -134,7 +133,7 @@ export class ParseFiled{
         try{
             this.mOrignData = parse(this.mPath);
         }catch{ 
-            this.mErrArray=  `${this.mPath}:表不存在 或 解析错误`;
+            this.mErrStr=  `${this.mPath}:表不存在 或 解析错误`;
             return undefined;
         }
         for(let index in this.mOrignData){
@@ -142,12 +141,12 @@ export class ParseFiled{
             if(config.name != DisposeSheet )
                 continue; 
             if(config.data.length < 4){//表的基础长度必须大于
-                this.mErrArray= "表列数不足，请检查表数据";
+                this.mErrStr= "表列数不足，请检查表数据";
                 break;
             }  
             return config;
         } 
-        this.mErrArray= "未知错误";
+        this.mErrStr= "未知错误";
         return undefined;
     }
     
@@ -156,19 +155,19 @@ export class ParseFiled{
         for(let i = 1;i < table!.data[1].length;i++){
             let filedName:string = table!.data[1][i];//获取到字段名称
             if( typeof(filedName) != "string" ||  filedName == ""){//如果检测到key为空字符串的话
-                this.mErrArray = `空键:1:${i} 类型错误 或 键为空，请检查表数据`;
+                this.mErrStr = `空键:1:${i} 类型错误 或 键为空，请检查表数据`;
                 retMap.clear();
                 return undefined;
             }
             if(retMap.has(filedName)){
-                this.mErrArray = `键重复:1:${i} 1:${retMap.get(filedName)} 键都为${filedName}，请检查表数据`;
+                this.mErrStr = `键重复:1:${i} 1:${retMap.get(filedName)} 键都为${filedName}，请检查表数据`;
                 return undefined;
             }
             retMap.set(filedName,i);
         }
         //检查表中是否有 key 键
         if(!retMap.has("key")){
-            this.mErrArray = `未找到键:表中为找到唯一的键(key)，请检查表是否添加唯一键`;
+            this.mErrStr = `未找到键:表中为找到唯一的键(key)，请检查表是否添加唯一键`;
             return undefined;
         }
         return retMap;
@@ -194,7 +193,7 @@ export class ParseFiled{
                     let objInfo:string = table.data[3][index]; //首先获取到具体的类型
                     let genObj:BaseTypeObj|undefined = TypeObjGenHandle(objInfo);
                     if(genObj == undefined){
-                        this.mErrArray = `数组类型错误:3:${index} 类型错误 或 不规范，请检查表数据`;
+                        this.mErrStr = `数组类型错误:3:${index} 类型错误 或 不规范，请检查表数据`;
                         return undefined;
                     }
                     objType = new ArrayType(genObj);    
@@ -203,7 +202,7 @@ export class ParseFiled{
                     try{
                         let obj:any = JSON.parse(objInfo)
                         if(obj.constructor.name != "Object"){
-                            this.mErrArray = `对象类型错误:3:${index} 请填写如正确的对象Json格式，请检查表数据`;
+                            this.mErrStr = `对象类型错误:3:${index} 请填写如正确的对象Json格式，请检查表数据`;
                             return undefined;
                         }  
                         let cellTypeMap:Map<string,BaseTypeObj> = new Map<string,BaseTypeObj>();
@@ -211,22 +210,22 @@ export class ParseFiled{
                             let type:string = obj[objKey]; 
                             let genObj:BaseTypeObj|undefined = TypeObjGenHandle(type);
                             if(genObj == undefined){
-                                this.mErrArray = `对象类型错误:3:${index} 类型错误 或 不规范，请检查表数据`;
+                                this.mErrStr = `对象类型错误:3:${index} 类型错误 或 不规范，请检查表数据`;
                                 return undefined;
                             }
                             cellTypeMap.set(objKey,genObj);
                         } 
                         if(cellTypeMap.size == 0) {
-                            this.mErrArray = `对象类型错误:3:${index} 传入数据不足，请补充数据`;
+                            this.mErrStr = `对象类型错误:3:${index} 传入数据不足，请补充数据`;
                             return undefined;
                         }
                         objType = new ObjectType(cellTypeMap);    
                     }catch{
-                        this.mErrArray = `对象类型解析失败:3:${index} 请填写如正确的Json格式，请检查表数据`;
+                        this.mErrStr = `对象类型解析失败:3:${index} 请填写如正确的Json格式，请检查表数据`;
                         return undefined;
                     } 
                 }else{
-                    this.mErrArray =`${key} 类型选取错误，请使用 number、string、boolean、Array、Object来重新赋值`;
+                    this.mErrStr =`${key} 类型选取错误，请使用 number、string、boolean、Array、Object来重新赋值`;
                     return undefined;
                 }
             }
@@ -250,7 +249,7 @@ export class ParseFiled{
                 let data:ContainType = table.data[i][index];//获取到当前的值
                 baseTypeobj.SetData(data);
                 if(baseTypeobj.Virify() == false){
-                    this.mErrArray = `数据转换失败:${i}:${index} 原因:${baseTypeobj.GetError()}`;
+                    this.mErrStr = `数据转换失败:${i}:${index} 原因:${baseTypeobj.GetError()}`;
                     return undefined;
                 }
                 colDataMap.set(index,baseTypeobj.GetResult());
@@ -260,13 +259,9 @@ export class ParseFiled{
     }
 }
 
-  
-
 function TypeObjGenHandle(type:string):BaseTypeObj|undefined{ 
-    switch(type){
-        case "number":  return new NumberType();
-        case "string":  return new StringType();
-        case "boolean":  return new BooleanType();
-    }
+    if(type == "number") return new NumberType();
+    if(type == "string") return new StringType();
+    if(type == "boolean") return new BooleanType();
     return undefined;
 }; 
