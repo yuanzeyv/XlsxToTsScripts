@@ -12,7 +12,8 @@ class Music{
         this.InitArray();
     }
     private InitConfig():void{
-		this.mConfigObject[1] = {key:1,Desc:"通用点击音效",AudioType:2,path:"cached_buy",};
+		this.mConfigObject[1] = {key:1,Desc:"通用点击音效",AudioType:2,path:"crowned1",};
+		this.mConfigObject[2] = {key:2,Desc:"BGM",AudioType:1,path:"EVILLAFF",};
     }
     private InitArray(){
         for(let key in this.mConfigObject){
